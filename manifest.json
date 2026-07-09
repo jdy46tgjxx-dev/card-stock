@@ -1,0 +1,12 @@
+{
+  "name": "Card Stock",
+  "short_name": "Card Stock",
+  "description": "端末内に保存する名刺管理アプリ",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#18324a",
+  "orientation": "portrait-primary",
+  "lang": "ja"
+}

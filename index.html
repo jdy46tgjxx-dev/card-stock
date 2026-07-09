@@ -35,11 +35,20 @@
         <select id="categoryFilter">
           <option value="">すべて</option>
         </select>
+        <label class="field-label" for="companyFilter">会社</label>
+        <select id="companyFilter">
+          <option value="">すべて</option>
+        </select>
         <p class="result-line"><span id="resultCount">0</span>件を表示中</p>
       </section>
 
       <section class="list-section" aria-live="polite">
+        <div class="view-switch" aria-label="表示切替">
+          <button class="seg-button active" id="personViewButton" type="button">個人別</button>
+          <button class="seg-button" id="companyViewButton" type="button">会社別</button>
+        </div>
         <div id="cardList" class="card-list"></div>
+        <div id="companyList" class="company-list" hidden></div>
         <div id="emptyState" class="empty-state" hidden>
           <h2>まだ名刺が登録されていません。</h2>
           <p>業者・本部・行政・修理関係などの連絡先をここに保存できます。</p>
@@ -54,12 +63,26 @@
           <button class="secondary-button" id="importButton" type="button">JSONから復元</button>
           <input id="importFileInput" type="file" accept="application/json,.json" hidden>
         </div>
+        <div class="category-manager">
+          <h2>カテゴリ管理</h2>
+          <div class="category-add-row">
+            <input id="customCategoryInput" type="text" placeholder="追加するカテゴリ名">
+            <button class="secondary-button" id="addCategoryButton" type="button">追加</button>
+          </div>
+          <div id="categoryList" class="category-list"></div>
+        </div>
       </section>
     </main>
 
     <nav class="bottom-bar" aria-label="主要操作">
       <button class="nav-button active" id="showListButton" type="button">
         <span>一覧</span>
+      </button>
+      <button class="nav-button" id="openCameraButton" type="button">
+        <span>撮影</span>
+      </button>
+      <button class="nav-button" id="showCompaniesButton" type="button">
+        <span>会社</span>
       </button>
       <button class="nav-button" id="showSearchButton" type="button">
         <span>検索</span>
@@ -87,13 +110,20 @@
       <div class="form-grid">
         <label>会社名<input id="companyInput" name="company" type="text" autocomplete="organization"></label>
         <label>氏名<input id="nameInput" name="name" type="text" autocomplete="name"></label>
+        <label>部署<input id="departmentInput" name="department" type="text"></label>
         <label>役職<input id="positionInput" name="position" type="text"></label>
         <label>電話番号<input id="phoneInput" name="phone" type="tel" autocomplete="tel"></label>
+        <label>携帯番号<input id="mobileInput" name="mobile" type="tel"></label>
         <label>メールアドレス<input id="emailInput" name="email" type="email" autocomplete="email"></label>
+        <label>郵便番号<input id="postalCodeInput" name="postalCode" type="text" inputmode="numeric"></label>
+        <label class="wide">住所<input id="addressInput" name="address" type="text" autocomplete="street-address"></label>
+        <label>WebサイトURL<input id="websiteInput" name="website" type="url" inputmode="url"></label>
         <label>カテゴリ<select id="categoryInput" name="category"></select></label>
         <label>最終連絡日<input id="lastContactDateInput" name="lastContactDate" type="date"></label>
+        <label class="wide">会社候補<select id="companyCandidateInput" name="companyCandidate"></select></label>
         <label class="wide">メモ<textarea id="memoInput" name="memo" rows="4"></textarea></label>
       </div>
+      <div id="companySuggestionBox" class="suggestion-box" hidden></div>
 
       <div class="image-section">
         <div class="image-picker">
@@ -117,6 +147,34 @@
     </form>
   </dialog>
 
+  <dialog id="cameraDialog" class="sheet-dialog camera-dialog">
+    <div class="sheet-content camera-content">
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Camera capture</p>
+          <h2>名刺を撮影</h2>
+        </div>
+        <button class="icon-button" id="closeCameraButton" type="button" aria-label="閉じる">×</button>
+      </div>
+      <div id="cameraStage" class="camera-stage">
+        <video id="cameraVideo" playsinline autoplay muted></video>
+        <div class="card-frame">
+          <span>名刺を枠内に合わせて撮影してください</span>
+        </div>
+      </div>
+      <div id="capturedPreview" class="capture-preview" hidden></div>
+      <p id="cameraError" class="error-message" hidden></p>
+      <div id="ocrStatus" class="ocr-status" hidden>名刺情報を読み取り中です</div>
+      <div class="sheet-actions camera-actions">
+        <button class="secondary-button" id="cameraFileButton" type="button">画像を選択</button>
+        <button class="primary-button capture-button" id="captureButton" type="button">撮影</button>
+        <button class="ghost-button" id="retakeButton" type="button" hidden>撮り直し</button>
+        <button class="primary-button" id="useCaptureButton" type="button" hidden>この写真で登録</button>
+        <input id="cameraFileInput" type="file" accept="image/*" capture="environment" hidden>
+      </div>
+    </div>
+  </dialog>
+
   <dialog id="detailDialog" class="sheet-dialog">
     <div class="sheet-content detail-content">
       <div class="sheet-header">
@@ -136,6 +194,32 @@
         <button class="secondary-button" id="editButton" type="button">編集</button>
       </div>
     </div>
+  </dialog>
+
+  <dialog id="companyDialog" class="sheet-dialog">
+    <form id="companyForm" method="dialog" class="sheet-content">
+      <div class="sheet-header">
+        <div>
+          <p class="eyebrow">Company detail</p>
+          <h2 id="companyDetailName">会社詳細</h2>
+        </div>
+        <button class="icon-button" id="closeCompanyButton" type="button" aria-label="閉じる">×</button>
+      </div>
+      <input id="companyIdInput" type="hidden">
+      <div class="form-grid">
+        <label>会社名<input id="companyNameEdit" type="text"></label>
+        <label>代表電話番号<input id="companyPhoneEdit" type="tel"></label>
+        <label>Webサイト<input id="companyWebsiteEdit" type="url"></label>
+        <label class="wide">住所<input id="companyAddressEdit" type="text"></label>
+        <label class="wide">会社メモ<textarea id="companyMemoEdit" rows="3"></textarea></label>
+      </div>
+      <h3 class="subheading">所属する名刺</h3>
+      <div id="companyPeopleList" class="mini-list"></div>
+      <div class="sheet-actions">
+        <button class="ghost-button" id="cancelCompanyButton" type="button">キャンセル</button>
+        <button class="primary-button" type="submit">会社情報を保存</button>
+      </div>
+    </form>
   </dialog>
 
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>

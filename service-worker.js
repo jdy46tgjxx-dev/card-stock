@@ -3,11 +3,11 @@ const APP_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./css/style.css",
-  "./js/db.js",
-  "./js/image.js",
-  "./js/ui.js",
-  "./js/app.js"
+  "./css/style.css?v=2",
+  "./js/db.js?v=2",
+  "./js/image.js?v=2",
+  "./js/ui.js?v=2",
+  "./js/app.js?v=2"
 ];
 
 self.addEventListener("install", (event) => {
